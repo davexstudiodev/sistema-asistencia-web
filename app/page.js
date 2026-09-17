@@ -10,24 +10,36 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ uid: '', name: '', grade: '', level: 1 })
   const [filter, setFilter] = useState('all')
+  const [lastPending, setLastPending] = useState('')
 
   const fetchData = useCallback(async () => {
     try {
-      const [statsRes, studentsRes, attendRes] = await Promise.all([
+      const [statsRes, studentsRes, attendRes, pendingRes] = await Promise.all([
         fetch('/api/stats'),
         fetch('/api/students'),
-        fetch('/api/attendance')
+        fetch('/api/attendance'),
+        fetch('/api/pending')
       ])
-      
+
       if (statsRes.ok) setStats(await statsRes.json())
       if (studentsRes.ok) setStudents(await studentsRes.json())
       if (attendRes.ok) setAttendance(await attendRes.json())
-      
+
+      if (pendingRes.ok) {
+        const pending = await pendingRes.json()
+        if (pending.pending && pending.uid !== lastPending) {
+          setLastPending(pending.uid)
+          setFormData({ uid: pending.uid, name: '', grade: '', level: 1 })
+          setShowForm(true)
+          setStatus({ type: 'waiting', text: 'NUEVA TARJETA: ' + pending.uid })
+        }
+      }
+
       setStatus({ type: 'ok', text: 'Sistema listo - Acerque tarjeta al lector' })
     } catch (e) {
       setStatus({ type: 'error', text: 'Error de conexion' })
     }
-  }, [])
+  }, [lastPending])
 
   useEffect(() => {
     fetchData()
@@ -44,8 +56,10 @@ export default function Home() {
         body: JSON.stringify(formData)
       })
       const data = await res.json()
-      
+
       if (data.ok) {
+        await fetch('/api/pending', { method: 'DELETE' })
+        setLastPending('')
         setStatus({ type: 'ok', text: 'Alumno registrado: ' + formData.name })
         setShowForm(false)
         setFormData({ uid: '', name: '', grade: '', level: 1 })
@@ -84,7 +98,7 @@ export default function Home() {
       </div>
 
       <div className="container">
-        <div className="status status-' + status.type">{status.text}</div>
+        <div className={`status status-${status.type}`}>{status.text}</div>
 
         <div className="stats">
           <div className="stat-box">
@@ -119,43 +133,43 @@ export default function Home() {
         </div>
 
         {showForm && (
-          <div className="card">
-            <h2>Registrar Alumno</h2>
+          <div className="card" style={{border: '1px solid #00d4ff'}}>
+            <h2>{lastPending ? 'NUEVA TARJETA DETECTADA' : 'Registrar Alumno'}</h2>
             <form onSubmit={handleRegister}>
               <div className="form-group">
-                <label>UID Tarjeta (desde lector)</label>
-                <input 
-                  type="text" 
-                  value={formData.uid} 
+                <label>UID Tarjeta</label>
+                <input
+                  type="text"
+                  value={formData.uid}
                   onChange={e => setFormData({...formData, uid: e.target.value})}
-                  placeholder="Ej: 08:8D:57:DB"
-                  required 
+                  placeholder="Se llena automaticamente"
+                  required
                 />
               </div>
               <div className="form-group">
                 <label>Nombre completo</label>
-                <input 
-                  type="text" 
-                  value={formData.name} 
+                <input
+                  type="text"
+                  value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   placeholder="Ej: Juan Perez"
-                  required 
+                  required
                 />
               </div>
               <div className="form-group">
                 <label>Grado / Seccion</label>
-                <input 
-                  type="text" 
-                  value={formData.grade} 
+                <input
+                  type="text"
+                  value={formData.grade}
                   onChange={e => setFormData({...formData, grade: e.target.value})}
                   placeholder="Ej: 5to A"
-                  required 
+                  required
                 />
               </div>
               <div className="form-group">
                 <label>Nivel</label>
-                <select 
-                  value={formData.level} 
+                <select
+                  value={formData.level}
                   onChange={e => setFormData({...formData, level: parseInt(e.target.value)})}
                 >
                   <option value={1}>Alumno</option>
@@ -190,15 +204,15 @@ export default function Home() {
                     <td>{s.name}</td>
                     <td>{s.grade}</td>
                     <td>
-                      <span className={'badge badge-' + (s.level === 3 ? 'admin' : s.level === 2 ? 'profesor' : 'alumno')}>
+                      <span className={`badge badge-${s.level === 3 ? 'admin' : s.level === 2 ? 'profesor' : 'alumno'}`}>
                         {s.level === 3 ? 'Admin' : s.level === 2 ? 'Profesor' : 'Alumno'}
                       </span>
                     </td>
                     <td>
-                      <button 
+                      <button
                         style={{background: 'none', border: 'none', color: '#ff1744', cursor: 'pointer', fontSize: '18px'}}
                         onClick={() => handleDelete(s.id, s.name)}
-                      >×</button>
+                      >x</button>
                     </td>
                   </tr>
                 ))}
@@ -210,8 +224,8 @@ export default function Home() {
         <div className="card">
           <h2>Historial</h2>
           <div style={{marginBottom: '10px'}}>
-            <button 
-              className="btn btn-warning" 
+            <button
+              className="btn btn-warning"
               style={{width: 'auto', display: 'inline-block', padding: '8px 16px', fontSize: '12px'}}
               onClick={() => setFilter(filter === 'today' ? 'all' : 'today')}
             >

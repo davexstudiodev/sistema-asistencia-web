@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Users, UserCheck, Database, Wifi, WifiOff, Plus, Trash2, RefreshCw, Download, Filter, Calendar, Clock, CreditCard, Shield, GraduationCap, BookOpen } from 'lucide-react'
 
 export default function Home() {
   const [stats, setStats] = useState({ totalStudents: 0, todayAttendance: 0, totalRecords: 0, recent: [] })
@@ -12,26 +13,20 @@ export default function Home() {
   const [statusText, setStatusText] = useState('Conectando...')
   const [statusType, setStatusType] = useState('info')
   const [lastPending, setLastPending] = useState('')
+  const [loading, setLoading] = useState(true)
 
   async function fetchData() {
     try {
-      const statsRes = await fetch('/api/stats')
-      const studentsRes = await fetch('/api/students')
-      const attendRes = await fetch('/api/attendance')
-      const pendingRes = await fetch('/api/pending')
+      const [statsRes, studentsRes, attendRes, pendingRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/students'),
+        fetch('/api/attendance'),
+        fetch('/api/pending')
+      ])
 
-      if (statsRes.ok) {
-        const s = await statsRes.json()
-        setStats(s)
-      }
-      if (studentsRes.ok) {
-        const s = await studentsRes.json()
-        setStudents(s)
-      }
-      if (attendRes.ok) {
-        const a = await attendRes.json()
-        setAttendance(a)
-      }
+      if (statsRes.ok) setStats(await statsRes.json())
+      if (studentsRes.ok) setStudents(await studentsRes.json())
+      if (attendRes.ok) setAttendance(await attendRes.json())
 
       if (pendingRes.ok) {
         const p = await pendingRes.json()
@@ -39,17 +34,20 @@ export default function Home() {
           setLastPending(p.uid)
           setFormData({ uid: p.uid, name: '', grade: '', level: 1 })
           setShowForm(true)
-          setStatusText('NUEVA TARJETA: ' + p.uid)
+          setStatusText('Nueva tarjeta detectada')
           setStatusType('waiting')
+          setLoading(false)
           return
         }
       }
 
-      setStatusText('Sistema listo - Acerque tarjeta')
+      setStatusText('Sistema listo')
       setStatusType('ok')
+      setLoading(false)
     } catch (e) {
       setStatusText('Error de conexion')
       setStatusType('error')
+      setLoading(false)
     }
   }
 
@@ -72,7 +70,7 @@ export default function Home() {
       if (data.ok) {
         await fetch('/api/pending', { method: 'DELETE' })
         setLastPending('')
-        setStatusText('Alumno registrado: ' + formData.name)
+        setStatusText('Alumno registrado')
         setStatusType('ok')
         setShowForm(false)
         setFormData({ uid: '', name: '', grade: '', level: 1 })
@@ -89,51 +87,73 @@ export default function Home() {
 
   async function handleDelete(id, name) {
     if (!confirm('Eliminar a ' + name + '?')) return
-    try {
-      await fetch('/api/students?id=' + id, { method: 'DELETE' })
-      fetchData()
-    } catch (e) {}
+    await fetch('/api/students?id=' + id, { method: 'DELETE' })
+    fetchData()
   }
 
-  function getStatusClass() {
-    if (statusType === 'ok') return 'status status-ok'
-    if (statusType === 'error') return 'status status-error'
-    if (statusType === 'waiting') return 'status status-waiting'
-    return 'status status-info'
+  function exportCSV() {
+    let csv = 'Nombre,UID,Grado,Nivel,Fecha,Hora\n'
+    attendance.forEach(a => {
+      csv += `"${a.name}","${a.uid}","${a.grade || ''}","${a.level || ''}","${a.date}","${a.time}"\n`
+    })
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'asistencia_' + new Date().toISOString().split('T')[0] + '.csv'
+    a.click()
   }
 
-  function getFilteredAttendance() {
-    if (filter === 'today') {
-      const today = new Date().toISOString().split('T')[0]
-      return attendance.filter(a => a.date === today)
-    }
-    return attendance
+  function getLevelIcon(level) {
+    if (level === 3) return <Shield size={14} />
+    if (level === 2) return <BookOpen size={14} />
+    return <GraduationCap size={14} />
   }
 
-  const filtered = getFilteredAttendance()
+  function getLevelText(level) {
+    if (level === 3) return 'Admin'
+    if (level === 2) return 'Profesor'
+    return 'Alumno'
+  }
+
+  const filtered = filter === 'today'
+    ? attendance.filter(a => a.date === new Date().toISOString().split('T')[0])
+    : attendance
 
   return (
     <>
       <div className="header">
-        <h1>SISTEMA DE ASISTENCIA</h1>
-        <p>Control Escolar por RFID</p>
+        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px'}}>
+          <CreditCard size={28} color="#00d4ff" />
+          <div>
+            <h1>SISTEMA DE ASISTENCIA</h1>
+            <p>Control Escolar por RFID</p>
+          </div>
+        </div>
       </div>
 
       <div className="container">
-        <div className={getStatusClass()}>{statusText}</div>
+        <div className={`status status-${statusType}`}>
+          {statusType === 'ok' && <Wifi size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />}
+          {statusType === 'error' && <WifiOff size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />}
+          {statusText}
+        </div>
 
         <div className="stats">
           <div className="stat-box">
+            <Users size={24} color="#00d4ff" style={{margin: '0 auto 8px'}} />
             <div className="number">{stats.totalStudents || 0}</div>
             <div className="label">Alumnos</div>
           </div>
           <div className="stat-box">
+            <UserCheck size={24} color="#00e676" style={{margin: '0 auto 8px'}} />
             <div className="number">{stats.todayAttendance || 0}</div>
-            <div className="label">Hoy Asistieron</div>
+            <div className="label">Hoy</div>
           </div>
           <div className="stat-box">
+            <Database size={24} color="#ffc107" style={{margin: '0 auto 8px'}} />
             <div className="number">{stats.totalRecords || 0}</div>
-            <div className="label">Registros</div>
+            <div className="label">Total</div>
           </div>
         </div>
 
@@ -142,34 +162,51 @@ export default function Home() {
             <p style={{color: '#666', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px'}}>Ultimo registro</p>
             <div className="nombre">{stats.recent[0].name}</div>
             <div className="grado">{stats.recent[0].grade || ''}</div>
-            <div className="hora">{stats.recent[0].time} - {stats.recent[0].date}</div>
+            <div className="hora">
+              <Clock size={14} style={{display: 'inline', verticalAlign: 'middle', marginRight: '4px'}} />
+              {stats.recent[0].time} - {stats.recent[0].date}
+            </div>
           </div>
         )}
 
         <div className="card">
           <h2>Acciones</h2>
-          <button className="btn btn-success" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'CANCELAR' : 'REGISTRAR NUEVO ALUMNO'}
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px'}}>
+            <button className="btn btn-success" onClick={() => setShowForm(!showForm)}>
+              <Plus size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '6px'}} />
+              {showForm ? 'CANCELAR' : 'REGISTRAR'}
+            </button>
+            <button className="btn btn-primary" onClick={fetchData}>
+              <RefreshCw size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '6px'}} />
+              ACTUALIZAR
+            </button>
+          </div>
+          <button className="btn btn-warning" onClick={exportCSV} style={{marginTop: '8px'}}>
+            <Download size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '6px'}} />
+            EXPORTAR CSV
           </button>
-          <button className="btn btn-primary" onClick={fetchData}>ACTUALIZAR</button>
         </div>
 
         {showForm && (
           <div className="card" style={{border: '1px solid #00d4ff'}}>
-            <h2>{lastPending ? 'NUEVA TARJETA DETECTADA' : 'Registrar Alumno'}</h2>
+            <h2>
+              <CreditCard size={18} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />
+              {lastPending ? 'NUEVA TARJETA' : 'REGISTRAR ALUMNO'}
+            </h2>
             <form onSubmit={handleRegister}>
               <div className="form-group">
-                <label>UID Tarjeta</label>
+                <label>UID TARJETA</label>
                 <input
                   type="text"
                   value={formData.uid}
                   onChange={(e) => setFormData({...formData, uid: e.target.value})}
                   placeholder="Se llena automaticamente"
                   required
+                  style={{fontFamily: 'monospace', letterSpacing: '2px'}}
                 />
               </div>
               <div className="form-group">
-                <label>Nombre completo</label>
+                <label>NOMBRE COMPLETO</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -179,7 +216,7 @@ export default function Home() {
                 />
               </div>
               <div className="form-group">
-                <label>Grado / Seccion</label>
+                <label>GRADO / SECCION</label>
                 <input
                   type="text"
                   value={formData.grade}
@@ -189,7 +226,7 @@ export default function Home() {
                 />
               </div>
               <div className="form-group">
-                <label>Nivel</label>
+                <label>NIVEL</label>
                 <select
                   value={formData.level}
                   onChange={(e) => setFormData({...formData, level: parseInt(e.target.value)})}
@@ -199,15 +236,24 @@ export default function Home() {
                   <option value="3">Admin</option>
                 </select>
               </div>
-              <button type="submit" className="btn btn-success">GUARDAR</button>
+              <button type="submit" className="btn btn-success">
+                GUARDAR EN BASE DE DATOS
+              </button>
             </form>
           </div>
         )}
 
         <div className="card">
-          <h2>Alumnos ({students.length})</h2>
+          <h2>
+            <Users size={18} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />
+            ALUMNOS ({students.length})
+          </h2>
           {students.length === 0 ? (
-            <div className="empty">No hay alumnos registrados</div>
+            <div className="empty">
+              <Users size={40} color="#333" />
+              <p style={{marginTop: '10px'}}>No hay alumnos registrados</p>
+              <p style={{fontSize: '12px', color: '#555', marginTop: '5px'}}>Acérque una tarjeta al lector para comenzar</p>
+            </div>
           ) : (
             <table>
               <thead>
@@ -222,19 +268,21 @@ export default function Home() {
               <tbody>
                 {students.map((s) => (
                   <tr key={s.id}>
-                    <td style={{fontSize: '11px', fontFamily: 'monospace'}}>{s.uid}</td>
-                    <td>{s.name}</td>
+                    <td style={{fontSize: '10px', fontFamily: 'monospace', color: '#888'}}>{s.uid}</td>
+                    <td style={{fontWeight: '500'}}>{s.name}</td>
                     <td>{s.grade}</td>
                     <td>
                       <span className={s.level === 3 ? 'badge badge-admin' : s.level === 2 ? 'badge badge-profesor' : 'badge badge-alumno'}>
-                        {s.level === 3 ? 'Admin' : s.level === 2 ? 'Profesor' : 'Alumno'}
+                        {getLevelIcon(s.level)} {getLevelText(s.level)}
                       </span>
                     </td>
                     <td>
                       <button
-                        style={{background: 'none', border: 'none', color: '#ff1744', cursor: 'pointer', fontSize: '18px'}}
+                        style={{background: 'none', border: 'none', color: '#ff1744', cursor: 'pointer'}}
                         onClick={() => handleDelete(s.id, s.name)}
-                      >x</button>
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -244,18 +292,25 @@ export default function Home() {
         </div>
 
         <div className="card">
-          <h2>Historial</h2>
-          <div style={{marginBottom: '10px'}}>
+          <h2>
+            <Calendar size={18} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />
+            HISTORIAL
+          </h2>
+          <div style={{marginBottom: '12px'}}>
             <button
               className="btn btn-warning"
-              style={{width: 'auto', display: 'inline-block', padding: '8px 16px', fontSize: '12px'}}
+              style={{width: 'auto', display: 'inline-block', padding: '8px 16px', fontSize: '11px'}}
               onClick={() => setFilter(filter === 'today' ? 'all' : 'today')}
             >
+              <Filter size={14} style={{display: 'inline', verticalAlign: 'middle', marginRight: '4px'}} />
               {filter === 'today' ? 'VER TODOS' : 'SOLO HOY'}
             </button>
           </div>
           {filtered.length === 0 ? (
-            <div className="empty">No hay registros</div>
+            <div className="empty">
+              <Calendar size={40} color="#333" />
+              <p style={{marginTop: '10px'}}>No hay registros</p>
+            </div>
           ) : (
             <table>
               <thead>
@@ -269,10 +324,10 @@ export default function Home() {
               <tbody>
                 {filtered.slice(0, 50).map((a) => (
                   <tr key={a.id}>
-                    <td>{a.name}</td>
+                    <td style={{fontWeight: '500'}}>{a.name}</td>
                     <td>{a.grade || '-'}</td>
-                    <td>{a.date}</td>
-                    <td>{a.time}</td>
+                    <td style={{fontSize: '12px'}}>{a.date}</td>
+                    <td style={{fontSize: '12px', fontFamily: 'monospace'}}>{a.time}</td>
                   </tr>
                 ))}
               </tbody>

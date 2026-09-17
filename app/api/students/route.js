@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const result = await sql`SELECT * FROM students ORDER BY grade, section, name`;
+    const result = await sql`SELECT * FROM students ORDER BY level, grade, section, name`;
     return Response.json(result);
   } catch (error) {
     return Response.json([]);
@@ -13,7 +13,7 @@ export async function GET() {
 
 export async function POST(request) {
   try {
-    const { uid, name, grade, section, level, teacher } = await request.json();
+    const { uid, name, grade, section, level } = await request.json();
 
     const existing = await sql`SELECT id FROM students WHERE uid = ${uid}`;
     if (existing.length > 0) {
@@ -21,8 +21,8 @@ export async function POST(request) {
     }
 
     const result = await sql`
-      INSERT INTO students (uid, name, grade, section, level, teacher)
-      VALUES (${uid}, ${name}, ${grade}, ${section || 'A'}, ${level || 1}, ${teacher || ''})
+      INSERT INTO students (uid, name, grade, section, level)
+      VALUES (${uid}, ${name}, ${grade || ''}, ${section || 'A'}, ${level || 1})
       RETURNING *
     `;
 
@@ -34,11 +34,11 @@ export async function POST(request) {
 
 export async function PUT(request) {
   try {
-    const { id, uid, name, grade, section, level, teacher } = await request.json();
+    const { id, uid, name, grade, section, level } = await request.json();
 
     const result = await sql`
       UPDATE students 
-      SET uid = ${uid}, name = ${name}, grade = ${grade}, section = ${section || 'A'}, level = ${level || 1}, teacher = ${teacher || ''}
+      SET uid = ${uid}, name = ${name}, grade = ${grade || ''}, section = ${section || 'A'}, level = ${level || 1}
       WHERE id = ${id}
       RETURNING *
     `;

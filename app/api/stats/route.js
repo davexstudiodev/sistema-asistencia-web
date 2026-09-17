@@ -7,29 +7,28 @@ export async function GET() {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
 
-    const totalStudents = await sql`SELECT COUNT(*) as count FROM students`;
+    const totalStudents = await sql`SELECT COUNT(*) as count FROM students WHERE level = 1`;
     const todayAttendance = await sql`SELECT COUNT(*) as count FROM attendance WHERE date = ${today}`;
     const totalRecords = await sql`SELECT COUNT(*) as count FROM attendance`;
 
-    // Asistencia por grado/seccion hoy
     let bySection = [];
     try {
       bySection = await sql`
-        SELECT s.grade, s.section, s.teacher,
+        SELECT s.grade, s.section,
                COUNT(DISTINCT a.student_id) as asistieron,
-               (SELECT COUNT(*) FROM students WHERE grade = s.grade AND section = s.section) as total
+               (SELECT COUNT(*) FROM students WHERE grade = s.grade AND section = s.section AND level = 1) as total
         FROM students s
         LEFT JOIN attendance a ON a.student_id = s.id AND a.date = ${today}
-        GROUP BY s.grade, s.section, s.teacher
+        WHERE s.level = 1 AND s.grade != ''
+        GROUP BY s.grade, s.section
         ORDER BY s.grade, s.section
       `;
     } catch(e) {}
 
-    // Ultimos registros
     let recent = [];
     try {
       recent = await sql`
-        SELECT a.*, s.grade, s.section, s.teacher FROM attendance a
+        SELECT a.*, s.grade, s.section FROM attendance a
         LEFT JOIN students s ON a.student_id = s.id
         WHERE a.date = ${today}
         ORDER BY a.created_at DESC
@@ -37,23 +36,14 @@ export async function GET() {
       `;
     } catch (e) {}
 
-    // Lista de maestros unicos
-    let teachers = [];
-    try {
-      teachers = await sql`
-        SELECT DISTINCT teacher FROM students WHERE teacher != '' ORDER BY teacher
-      `;
-    } catch(e) {}
-
     return Response.json({
       totalStudents: parseInt(totalStudents[0].count) || 0,
       todayAttendance: parseInt(todayAttendance[0].count) || 0,
       totalRecords: parseInt(totalRecords[0].count) || 0,
       bySection: Array.isArray(bySection) ? bySection : [],
-      recent: Array.isArray(recent) ? recent : [],
-      teachers: Array.isArray(teachers) ? teachers.map(t => t.teacher) : []
+      recent: Array.isArray(recent) ? recent : []
     });
   } catch (error) {
-    return Response.json({ totalStudents: 0, todayAttendance: 0, totalRecords: 0, bySection: [], recent: [], teachers: [] });
+    return Response.json({ totalStudents: 0, todayAttendance: 0, totalRecords: 0, bySection: [], recent: [] });
   }
 }

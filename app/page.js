@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Users, UserCheck, Database, Wifi, WifiOff, Plus, Trash2, RefreshCw, Download, Filter, Calendar, Clock, CreditCard, Shield, GraduationCap, BookOpen } from 'lucide-react'
+import { Users, UserCheck, Database, Wifi, WifiOff, Plus, Trash2, RefreshCw, Download, Filter, Calendar, Clock, CreditCard, Shield, GraduationCap, BookOpen, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function Home() {
   const [stats, setStats] = useState({ totalStudents: 0, todayAttendance: 0, totalRecords: 0, recent: [] })
@@ -13,7 +13,8 @@ export default function Home() {
   const [statusText, setStatusText] = useState('Conectando...')
   const [statusType, setStatusType] = useState('info')
   const [lastPending, setLastPending] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [searchStudent, setSearchStudent] = useState('')
+  const [searchAttendance, setSearchAttendance] = useState('')
 
   async function fetchData() {
     try {
@@ -36,18 +37,15 @@ export default function Home() {
           setShowForm(true)
           setStatusText('Nueva tarjeta detectada')
           setStatusType('waiting')
-          setLoading(false)
           return
         }
       }
 
       setStatusText('Sistema listo')
       setStatusType('ok')
-      setLoading(false)
     } catch (e) {
       setStatusText('Error de conexion')
       setStatusType('error')
-      setLoading(false)
     }
   }
 
@@ -91,23 +89,46 @@ export default function Home() {
     fetchData()
   }
 
-  function exportCSV() {
-    let csv = 'Nombre,UID,Grado,Nivel,Fecha,Hora\n'
-    attendance.forEach(a => {
-      csv += `"${a.name}","${a.uid}","${a.grade || ''}","${a.level || ''}","${a.date}","${a.time}"\n`
-    })
-    const blob = new Blob([csv], { type: 'text/csv' })
+  function exportCSV(type) {
+    const BOM = '\uFEFF'
+    let csv = BOM
+    let filename = ''
+    const today = new Date().toISOString().split('T')[0]
+
+    if (type === 'students') {
+      csv += 'No.,UID Tarjeta,Nombre Completo,Grado / Seccion,Nivel,Fecha Registro\n'
+      students.forEach((s, i) => {
+        csv += `${i + 1},"${s.uid}","${s.name}","${s.grade || ''}","${s.level === 3 ? 'Admin' : s.level === 2 ? 'Profesor' : 'Alumno'}","${s.created_at || ''}"\n`
+      })
+      filename = 'alumnos_' + today + '.csv'
+    } else if (type === 'attendance-today') {
+      csv += 'No.,Nombre,Grado,Nivel,UID,Fecha,Hora\n'
+      const todayRecords = attendance.filter(a => a.date === today)
+      todayRecords.forEach((a, i) => {
+        csv += `${i + 1},"${a.name}","${a.grade || ''}","${a.level === 3 ? 'Admin' : a.level === 2 ? 'Profesor' : 'Alumno'}","${a.uid}","${a.date}","${a.time}"\n`
+      })
+      filename = 'asistencia_hoy_' + today + '.csv'
+    } else {
+      csv += 'No.,Nombre,Grado,Nivel,UID,Fecha,Hora\n'
+      attendance.forEach((a, i) => {
+        csv += `${i + 1},"${a.name}","${a.grade || ''}","${a.level === 3 ? 'Admin' : a.level === 2 ? 'Profesor' : 'Alumno'}","${a.uid}","${a.date}","${a.time}"\n`
+      })
+      filename = 'asistencia_total_' + today + '.csv'
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'asistencia_' + new Date().toISOString().split('T')[0] + '.csv'
-    a.click()
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   function getLevelIcon(level) {
-    if (level === 3) return <Shield size={14} />
-    if (level === 2) return <BookOpen size={14} />
-    return <GraduationCap size={14} />
+    if (level === 3) return <Shield size={12} />
+    if (level === 2) return <BookOpen size={12} />
+    return <GraduationCap size={12} />
   }
 
   function getLevelText(level) {
@@ -116,9 +137,20 @@ export default function Home() {
     return 'Alumno'
   }
 
-  const filtered = filter === 'today'
-    ? attendance.filter(a => a.date === new Date().toISOString().split('T')[0])
-    : attendance
+  const filteredStudents = students.filter(s =>
+    s.name.toLowerCase().includes(searchStudent.toLowerCase()) ||
+    s.uid.toLowerCase().includes(searchStudent.toLowerCase()) ||
+    (s.grade && s.grade.toLowerCase().includes(searchStudent.toLowerCase()))
+  )
+
+  const filteredAttendance = attendance.filter(a => {
+    const matchesSearch = a.name.toLowerCase().includes(searchAttendance.toLowerCase()) ||
+      (a.grade && a.grade.toLowerCase().includes(searchAttendance.toLowerCase()))
+    if (filter === 'today') {
+      return matchesSearch && a.date === new Date().toISOString().split('T')[0]
+    }
+    return matchesSearch
+  })
 
   return (
     <>
@@ -134,36 +166,36 @@ export default function Home() {
 
       <div className="container">
         <div className={`status status-${statusType}`}>
-          {statusType === 'ok' && <Wifi size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />}
-          {statusType === 'error' && <WifiOff size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />}
+          {statusType === 'ok' && <Wifi size={16} />}
+          {statusType === 'error' && <WifiOff size={16} />}
           {statusText}
         </div>
 
         <div className="stats">
-          <div className="stat-box">
-            <Users size={24} color="#00d4ff" style={{margin: '0 auto 8px'}} />
+          <div className="stat-box stat-blue">
+            <div className="stat-icon"><Users size={22} /></div>
             <div className="number">{stats.totalStudents || 0}</div>
             <div className="label">Alumnos</div>
           </div>
-          <div className="stat-box">
-            <UserCheck size={24} color="#00e676" style={{margin: '0 auto 8px'}} />
+          <div className="stat-box stat-green">
+            <div className="stat-icon"><UserCheck size={22} /></div>
             <div className="number">{stats.todayAttendance || 0}</div>
             <div className="label">Hoy</div>
           </div>
-          <div className="stat-box">
-            <Database size={24} color="#ffc107" style={{margin: '0 auto 8px'}} />
+          <div className="stat-box stat-yellow">
+            <div className="stat-icon"><Database size={22} /></div>
             <div className="number">{stats.totalRecords || 0}</div>
             <div className="label">Total</div>
           </div>
         </div>
 
         {stats.recent && stats.recent.length > 0 && (
-          <div className="ultimo-marcado">
-            <p style={{color: '#666', marginBottom: '8px', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px'}}>Ultimo registro</p>
+          <div className="card ultimo-marcado">
+            <div className="ultimo-label">Ultimo registro</div>
             <div className="nombre">{stats.recent[0].name}</div>
             <div className="grado">{stats.recent[0].grade || ''}</div>
             <div className="hora">
-              <Clock size={14} style={{display: 'inline', verticalAlign: 'middle', marginRight: '4px'}} />
+              <Clock size={14} />
               {stats.recent[0].time} - {stats.recent[0].date}
             </div>
           </div>
@@ -171,27 +203,32 @@ export default function Home() {
 
         <div className="card">
           <h2>Acciones</h2>
-          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px'}}>
+          <div className="actions-grid">
             <button className="btn btn-success" onClick={() => setShowForm(!showForm)}>
-              <Plus size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '6px'}} />
-              {showForm ? 'CANCELAR' : 'REGISTRAR'}
+              <Plus size={16} /> {showForm ? 'CANCELAR' : 'REGISTRAR'}
             </button>
             <button className="btn btn-primary" onClick={fetchData}>
-              <RefreshCw size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '6px'}} />
-              ACTUALIZAR
+              <RefreshCw size={16} /> ACTUALIZAR
             </button>
           </div>
-          <button className="btn btn-warning" onClick={exportCSV} style={{marginTop: '8px'}}>
-            <Download size={16} style={{display: 'inline', verticalAlign: 'middle', marginRight: '6px'}} />
-            EXPORTAR CSV
-          </button>
+          <div className="export-grid">
+            <button className="btn btn-outline" onClick={() => exportCSV('students')}>
+              <Download size={14} /> Alumnos
+            </button>
+            <button className="btn btn-outline" onClick={() => exportCSV('attendance-today')}>
+              <Download size={14} /> Asistencia Hoy
+            </button>
+            <button className="btn btn-outline" onClick={() => exportCSV('all')}>
+              <Download size={14} /> Todo
+            </button>
+          </div>
         </div>
 
         {showForm && (
-          <div className="card" style={{border: '1px solid #00d4ff'}}>
+          <div className="card card-highlight">
             <h2>
-              <CreditCard size={18} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />
-              {lastPending ? 'NUEVA TARJETA' : 'REGISTRAR ALUMNO'}
+              <CreditCard size={18} />
+              {lastPending ? 'NUEVA TARJETA DETECTADA' : 'REGISTRAR ALUMNO'}
             </h2>
             <form onSubmit={handleRegister}>
               <div className="form-group">
@@ -245,93 +282,121 @@ export default function Home() {
 
         <div className="card">
           <h2>
-            <Users size={18} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />
+            <Users size={18} />
             ALUMNOS ({students.length})
           </h2>
-          {students.length === 0 ? (
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, UID o grado..."
+              value={searchStudent}
+              onChange={(e) => setSearchStudent(e.target.value)}
+            />
+          </div>
+          {filteredStudents.length === 0 ? (
             <div className="empty">
-              <Users size={40} color="#333" />
-              <p style={{marginTop: '10px'}}>No hay alumnos registrados</p>
-              <p style={{fontSize: '12px', color: '#555', marginTop: '5px'}}>Acérque una tarjeta al lector para comenzar</p>
+              <Users size={40} />
+              <p>{searchStudent ? 'No se encontraron resultados' : 'No hay alumnos registrados'}</p>
+              {!searchStudent && <p className="empty-sub">Acérque una tarjeta al lector para comenzar</p>}
             </div>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>UID</th>
-                  <th>Nombre</th>
-                  <th>Grado</th>
-                  <th>Nivel</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((s) => (
-                  <tr key={s.id}>
-                    <td style={{fontSize: '10px', fontFamily: 'monospace', color: '#888'}}>{s.uid}</td>
-                    <td style={{fontWeight: '500'}}>{s.name}</td>
-                    <td>{s.grade}</td>
-                    <td>
-                      <span className={s.level === 3 ? 'badge badge-admin' : s.level === 2 ? 'badge badge-profesor' : 'badge badge-alumno'}>
-                        {getLevelIcon(s.level)} {getLevelText(s.level)}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        style={{background: 'none', border: 'none', color: '#ff1744', cursor: 'pointer'}}
-                        onClick={() => handleDelete(s.id, s.name)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{width: '40px'}}>#</th>
+                    <th>UID</th>
+                    <th>Nombre</th>
+                    <th>Grado</th>
+                    <th>Nivel</th>
+                    <th style={{width: '40px'}}></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredStudents.map((s, i) => (
+                    <tr key={s.id}>
+                      <td className="cell-num">{i + 1}</td>
+                      <td className="cell-uid">{s.uid}</td>
+                      <td className="cell-name">{s.name}</td>
+                      <td>{s.grade}</td>
+                      <td>
+                        <span className={s.level === 3 ? 'badge badge-admin' : s.level === 2 ? 'badge badge-profesor' : 'badge badge-alumno'}>
+                          {getLevelIcon(s.level)} {getLevelText(s.level)}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="btn-icon btn-delete" onClick={() => handleDelete(s.id, s.name)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
         <div className="card">
-          <h2>
-            <Calendar size={18} style={{display: 'inline', verticalAlign: 'middle', marginRight: '8px'}} />
-            HISTORIAL
-          </h2>
-          <div style={{marginBottom: '12px'}}>
+          <div className="card-header-row">
+            <h2>
+              <Calendar size={18} />
+              HISTORIAL ({filteredAttendance.length})
+            </h2>
             <button
-              className="btn btn-warning"
-              style={{width: 'auto', display: 'inline-block', padding: '8px 16px', fontSize: '11px'}}
+              className="btn btn-outline btn-sm"
               onClick={() => setFilter(filter === 'today' ? 'all' : 'today')}
             >
-              <Filter size={14} style={{display: 'inline', verticalAlign: 'middle', marginRight: '4px'}} />
+              <Filter size={14} />
               {filter === 'today' ? 'VER TODOS' : 'SOLO HOY'}
             </button>
           </div>
-          {filtered.length === 0 ? (
+          <div className="search-box">
+            <Search size={16} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o grado..."
+              value={searchAttendance}
+              onChange={(e) => setSearchAttendance(e.target.value)}
+            />
+          </div>
+          {filteredAttendance.length === 0 ? (
             <div className="empty">
-              <Calendar size={40} color="#333" />
-              <p style={{marginTop: '10px'}}>No hay registros</p>
+              <Calendar size={40} />
+              <p>{searchAttendance ? 'No se encontraron resultados' : 'No hay registros'}</p>
             </div>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Grado</th>
-                  <th>Fecha</th>
-                  <th>Hora</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.slice(0, 50).map((a) => (
-                  <tr key={a.id}>
-                    <td style={{fontWeight: '500'}}>{a.name}</td>
-                    <td>{a.grade || '-'}</td>
-                    <td style={{fontSize: '12px'}}>{a.date}</td>
-                    <td style={{fontSize: '12px', fontFamily: 'monospace'}}>{a.time}</td>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style={{width: '40px'}}>#</th>
+                    <th>Nombre</th>
+                    <th>Grado</th>
+                    <th>Nivel</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredAttendance.slice(0, 100).map((a, i) => (
+                    <tr key={a.id}>
+                      <td className="cell-num">{i + 1}</td>
+                      <td className="cell-name">{a.name}</td>
+                      <td>{a.grade || '-'}</td>
+                      <td>
+                        <span className={a.level === 3 ? 'badge badge-admin' : a.level === 2 ? 'badge badge-profesor' : 'badge badge-alumno'}>
+                          {getLevelIcon(a.level)} {getLevelText(a.level)}
+                        </span>
+                      </td>
+                      <td className="cell-date">{a.date}</td>
+                      <td className="cell-time">{a.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

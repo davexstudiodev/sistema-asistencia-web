@@ -1,33 +1,24 @@
-const { sql, initDB } = require('../../../lib/db');
+const { sql } = require('../../../lib/db');
 
-async function ensurePendingTable() {
-  await sql`
-    CREATE TABLE IF NOT EXISTS pending_cards (
-      id SERIAL PRIMARY KEY,
-      uid VARCHAR(20) UNIQUE NOT NULL,
-      created_at TIMESTAMP DEFAULT NOW()
-    )
-  `;
-}
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    await ensurePendingTable();
-    const pending = await sql`SELECT * FROM pending_cards ORDER BY created_at DESC LIMIT 1`;
-    if (pending.length > 0) {
-      return Response.json({ pending: true, uid: pending[0].uid });
-    }
-    return Response.json({ pending: false });
+    const result = await sql`
+      SELECT a.*, s.grade, s.level
+      FROM attendance a
+      LEFT JOIN students s ON a.student_id = s.id
+      ORDER BY a.created_at DESC
+      LIMIT 200
+    `;
+    return Response.json(result);
   } catch (error) {
-    return Response.json({ pending: false });
+    return Response.json([]);
   }
 }
 
 export async function POST(request) {
   try {
-    await initDB();
-    await ensurePendingTable();
-
     const { uid } = await request.json();
 
     const students = await sql`SELECT * FROM students WHERE uid = ${uid}`;

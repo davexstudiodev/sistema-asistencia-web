@@ -1,0 +1,228 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: #0f0f23;
+  color: #e0e0e0;
+  min-height: 100vh;
+}
+
+.header {
+  background: linear-gradient(135deg, #1a1a3e 0%, #0d1b2a 100%);
+  padding: 20px;
+  text-align: center;
+  border-bottom: 3px solid #00d4ff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header h1 {
+  font-size: 22px;
+  color: #00d4ff;
+  letter-spacing: 2px;
+}
+
+.header p {
+  color: #666;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 15px;
+}
+
+.card {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+  border: 1px solid #2a2a4a;
+}
+
+.card h2 {
+  color: #00d4ff;
+  margin-bottom: 15px;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, #1a1a3e, #16213e);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  border: 1px solid #2a2a4a;
+}
+
+.stat-box .number {
+  font-size: 36px;
+  font-weight: bold;
+  color: #00d4ff;
+  text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.stat-box .label {
+  font-size: 11px;
+  color: #888;
+  margin-top: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn-primary { background: #00d4ff; color: #000; }
+.btn-success { background: #00e676; color: #000; }
+.btn-danger { background: #ff1744; color: #fff; }
+.btn-warning { background: #ffc107; color: #000; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #2a2a4a;
+  font-size: 13px;
+}
+
+th {
+  background: #16213e;
+  color: #00d4ff;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+tr:hover { background: #1a1a3e; }
+
+.badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-admin { background: #ff1744; color: #fff; }
+.badge-profesor { background: #00d4ff; color: #000; }
+.badge-alumno { background: #00e676; color: #000; }
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #888;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  background: #0f0f23;
+  color: #fff;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #00d4ff;
+}
+
+.status {
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-ok { background: rgba(0, 230, 118, 0.2); color: #00e676; border: 1px solid #00e676; }
+.status-error { background: rgba(255, 23, 68, 0.2); color: #ff1744; border: 1px solid #ff1744; }
+.status-waiting { background: rgba(255, 193, 7, 0.2); color: #ffc107; border: 1px solid #ffc107; }
+.status-info { background: rgba(0, 212, 255, 0.2); color: #00d4ff; border: 1px solid #00d4ff; }
+
+.ultimo-marcado {
+  text-align: center;
+  padding: 25px;
+  background: linear-gradient(135deg, #1a1a3e 0%, #0d1b2a 100%);
+  border-radius: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #00d4ff;
+}
+
+.ultimo-marcado .nombre {
+  font-size: 32px;
+  font-weight: bold;
+  color: #00d4ff;
+  text-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+}
+
+.ultimo-marcado .hora {
+  font-size: 14px;
+  color: #888;
+  margin-top: 5px;
+}
+
+.ultimo-marcado .grado {
+  font-size: 12px;
+  color: #666;
+}
+
+.hidden { display: none; }
+
+.empty {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

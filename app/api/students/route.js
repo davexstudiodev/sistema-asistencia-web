@@ -52,10 +52,11 @@ export async function PUT(request) {
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const id = parseInt(searchParams.get('id'));
+    if (isNaN(id)) return Response.json({ ok: false }, { status: 400 });
     await sql`DELETE FROM students WHERE id = ${id}`;
     return Response.json({ ok: true });
   } catch (error) {
-    return Response.json({ ok: false }, { status: 500 });
+    return Response.json({ ok: false, error: error.message }, { status: 500 });
   }
 }

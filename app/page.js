@@ -311,54 +311,56 @@ export default function Home() {
           </>
         )}
 
-        {/* ========== FORMULARIO ========== */}
+        {/* ========== FORMULARIO MODAL ========== */}
         {showForm && (
-          <div className="card card-highlight">
-            <h2>
-              <CreditCard size={18} />
-              {editingStudent ? 'EDITAR' : lastPending ? 'NUEVA TARJETA' : 'REGISTRAR'}
-              <button className="btn-icon" style={{marginLeft: 'auto'}} onClick={() => { setShowForm(false); setEditingStudent(null); }}><X size={18} /></button>
-            </h2>
-            <form onSubmit={handleRegister}>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>UID TARJETA</label>
-                  <input type="text" value={formData.uid} onChange={(e) => setFormData({...formData, uid: e.target.value})} placeholder="Auto" required style={{fontFamily: 'monospace'}} />
-                </div>
-                <div className="form-group">
-                  <label>NIVEL</label>
-                  <select value={formData.level} onChange={(e) => setFormData({...formData, level: parseInt(e.target.value)})}>
-                    <option value="1">Alumno</option>
-                    <option value="2">Profesor</option>
-                    <option value="3">Director</option>
-                  </select>
-                </div>
+          <div className="modal-overlay" onClick={() => { setShowForm(false); setEditingStudent(null); }}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <CreditCard size={20} />
+                <span>{editingStudent ? 'EDITAR' : lastPending ? 'NUEVA TARJETA DETECTADA' : 'REGISTRAR ALUMNO'}</span>
+                <button className="btn-icon" style={{marginLeft: 'auto'}} onClick={() => { setShowForm(false); setEditingStudent(null); }}><X size={20} /></button>
               </div>
-              <div className="form-group">
-                <label>NOMBRE COMPLETO</label>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Ej: Juan Perez" required />
-              </div>
-              {formData.level === 1 && (
+              <form onSubmit={handleRegister}>
                 <div className="form-row">
                   <div className="form-group">
-                    <label>GRADO</label>
-                    <select value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} required>
-                      <option value="">Seleccionar</option>
-                      {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
+                    <label>UID TARJETA</label>
+                    <input type="text" value={formData.uid} onChange={(e) => setFormData({...formData, uid: e.target.value})} placeholder="Auto" required style={{fontFamily: 'monospace'}} />
                   </div>
                   <div className="form-group">
-                    <label>SECCION</label>
-                    <select value={formData.section} onChange={(e) => setFormData({...formData, section: e.target.value})}>
-                      {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    <label>NIVEL</label>
+                    <select value={formData.level} onChange={(e) => setFormData({...formData, level: parseInt(e.target.value)})}>
+                      <option value="1">Alumno</option>
+                      <option value="2">Profesor</option>
+                      <option value="3">Director</option>
                     </select>
                   </div>
                 </div>
-              )}
-              <button type="submit" className="btn btn-success">
-                <Check size={16} /> {editingStudent ? 'ACTUALIZAR' : 'GUARDAR'}
-              </button>
-            </form>
+                <div className="form-group">
+                  <label>NOMBRE COMPLETO</label>
+                  <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Ej: Juan Perez" required autoFocus />
+                </div>
+                {formData.level === 1 && (
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>GRADO</label>
+                      <select value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} required>
+                        <option value="">Seleccionar</option>
+                        {GRADES.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>SECCION</label>
+                      <select value={formData.section} onChange={(e) => setFormData({...formData, section: e.target.value})}>
+                        {SECTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+                <button type="submit" className="btn btn-success" style={{marginTop: '8px'}}>
+                  <Check size={16} /> {editingStudent ? 'ACTUALIZAR' : 'GUARDAR'}
+                </button>
+              </form>
+            </div>
           </div>
         )}
 

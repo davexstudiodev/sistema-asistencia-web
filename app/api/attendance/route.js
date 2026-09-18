@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const result = await sql`
-      SELECT a.*, s.level, s.section, s.teacher
+      SELECT a.*, s.level
       FROM attendance a
       LEFT JOIN students s ON a.student_id = s.id
       ORDER BY a.created_at DESC
@@ -41,8 +41,8 @@ export async function POST(request) {
     }
 
     const result = await sql`
-      INSERT INTO attendance (student_id, uid, name, grade, section, teacher, date, time)
-      VALUES (${student.id}, ${uid}, ${student.name}, ${student.grade}, ${student.section || 'A'}, ${student.teacher || ''}, ${date}, ${time})
+      INSERT INTO attendance (student_id, uid, name, grade, section, date, time)
+      VALUES (${student.id}, ${uid}, ${student.name}, ${student.grade || ''}, ${student.section || 'A'}, ${date}, ${time})
       RETURNING *
     `;
 

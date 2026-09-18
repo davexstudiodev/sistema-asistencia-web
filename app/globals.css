@@ -90,7 +90,7 @@ body {
 .mini-fill { height: 100%; background: #00e676; border-radius: 2px; }
 
 /* Section badge */
-.section-badge { background: rgba(0, 212, 255, 0.12); color: #00d4ff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+.section-badge { background: rgba(0, 212, 255, 0.1); color: #00d4ff; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid rgba(0, 212, 255, 0.2); }
 
 /* Buttons */
 .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -119,19 +119,20 @@ body {
 .search-box input::placeholder { color: #3f3f46; }
 
 /* Tables */
-.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #27272a; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #1e1e22; font-size: 13px; }
-th { color: #71717a; text-transform: uppercase; font-size: 10px; font-weight: 600; letter-spacing: 1.5px; background: #0f0f12; }
+.table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #27272a; background: #0f0f12; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; }
+th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #1e1e22; font-size: 13px; white-space: nowrap; }
+th { color: #a1a1aa; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; background: #18181b; border-bottom: 2px solid #27272a; position: sticky; top: 0; z-index: 1; }
+td { color: #e4e4e7; }
 tbody tr { transition: background 0.1s; }
-tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-tr:last-child td { border-bottom: none; }
-.cell-num { color: #52525b; font-size: 11px; font-family: monospace; }
-.cell-uid { font-size: 11px; font-family: monospace; color: #71717a; }
-.cell-name { font-weight: 500; color: #e4e4e7; }
-.cell-teacher { font-size: 12px; color: #a1a1aa; }
+tbody tr:hover { background: rgba(0, 212, 255, 0.03); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:not(:last-child) td { border-bottom: 1px solid #1a1a1e; }
+.cell-num { color: #52525b; font-size: 11px; font-family: monospace; width: 40px; text-align: center; }
+.cell-uid { font-size: 11px; font-family: 'Courier New', monospace; color: #71717a; letter-spacing: 0.5px; }
+.cell-name { font-weight: 600; color: #fafafa; }
 .cell-date { font-size: 12px; color: #a1a1aa; }
-.cell-time { font-size: 12px; font-family: monospace; color: #71717a; }
+.cell-time { font-size: 12px; font-family: 'Courier New', monospace; color: #71717a; }
 
 /* Badges */
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; white-space: nowrap; }

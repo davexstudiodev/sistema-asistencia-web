@@ -154,41 +154,52 @@ export default function Home() {
     return 'Alumno'
   }
 
+  function esc(val) {
+    if (!val && val !== 0) return ''
+    const s = String(val)
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"'
+    }
+    return s
+  }
+
   function exportCSV(type, data, filename) {
-    const BOM = '\uFEFF'
-    let csv = BOM + 'No.,'
+    const SEP = ','
+    const NL = '\n'
+    let csv = ''
 
     if (type === 'students') {
-      csv += 'UID,Nombre,Grado,Seccion,Nivel,Fecha Registro\n'
+      csv += ['No', 'UID', 'Nombre', 'Grado', 'Seccion', 'Nivel'].join(SEP) + NL
       data.forEach((s, i) => {
-        csv += `${i + 1},"${s.uid}","${s.name}","${s.grade || ''}","${s.section || ''}","${getLevelText(s.level)}","${s.created_at || ''}"\n`
+        csv += [i + 1, esc(s.uid), esc(s.name), esc(s.grade), esc(s.section || 'A'), esc(getLevelText(s.level))].join(SEP) + NL
       })
     } else if (type === 'attendance') {
-      csv += 'Nombre,Grado,Seccion,UID,Fecha,Hora\n'
+      csv += ['No', 'Nombre', 'Grado', 'Seccion', 'UID', 'Fecha', 'Hora'].join(SEP) + NL
       data.forEach((a, i) => {
-        csv += `${i + 1},"${a.name}","${a.grade || ''}","${a.section || ''}","${a.uid}","${a.date}","${a.time}"\n`
+        csv += [i + 1, esc(a.name), esc(a.grade), esc(a.section), esc(a.uid), esc(a.date), esc(a.time)].join(SEP) + NL
       })
     } else if (type === 'libro') {
-      csv += 'Alumno,'
       const dates = [...new Set(data.map(a => a.date))].sort()
-      dates.forEach(d => { csv += `${d},` })
-      csv += 'Total,Porcentaje\n'
-      
+      const header = ['No', 'Alumno', ...dates, 'Asistencias', 'Porcentaje']
+      csv += header.join(SEP) + NL
+
       const byName = {}
       data.forEach(a => {
         if (!byName[a.name]) byName[a.name] = { name: a.name, dates: new Set() }
         byName[a.name].dates.add(a.date)
       })
-      
+
       Object.values(byName).forEach((s, i) => {
-        csv += `${i + 1},"${s.name}",`
-        dates.forEach(d => { csv += `${s.dates.has(d) ? 'X' : ''},` })
-        const pct = dates.length > 0 ? Math.round((s.dates.size / dates.length) * 100) : 0
-        csv += `${s.dates.size},${pct}%\n`
+        const row = [i + 1, esc(s.name)]
+        dates.forEach(d => row.push(s.dates.has(d) ? 'X' : ''))
+        row.push(s.dates.size)
+        row.push(Math.round((s.dates.size / dates.length) * 100) + '%')
+        csv += row.join(SEP) + NL
       })
     }
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
